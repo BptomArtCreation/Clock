@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- 讓 Web App 在 iOS 舊版也能隱藏網址列 (必須加入主畫面) -->
+    <!-- iOS 舊版全螢幕設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>HK Flip Clock Legacy</title>
+    <title>Big Flip Clock</title>
     <style>
-        /* 重置 */
+        /* --- 基礎設定 --- */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-box-sizing: border-box; }
         
         body {
-            font-family: Helvetica, Arial, sans-serif; /* 使用舊版系統字體 */
-            background: #000; /* 預設黑底 */
-            background-image: url('https://images.unsplash.com/photo-1556206079-747a7d467485?q=80&w=1024&auto=format&fit=crop');
+            font-family: Helvetica, Arial, sans-serif;
+            background: #000;
+            /* 背景圖：深色城市夜景 */
+            background-image: url('https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1024&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
             height: 100vh;
@@ -24,22 +25,20 @@
             -webkit-user-select: none;
         }
 
-        /* 舊設備的遮罩，不用 backdrop-filter 改用半透明色 */
-        .mask {
+        /* 遮罩：讓文字更清楚 */
+        .overlay {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* 加深遮罩 */
             z-index: 0;
         }
 
         .container {
             position: relative;
             z-index: 1;
-            width: 95%;
-            max-width: 600px;
-            margin: 0 auto;
+            width: 100%;
             height: 100%;
-            display: -webkit-flex; /* iOS 9 Flexbox */
+            display: -webkit-flex;
             display: flex;
             -webkit-flex-direction: column;
             flex-direction: column;
@@ -47,72 +46,112 @@
             justify-content: center;
             -webkit-align-items: center;
             align-items: center;
+            padding: 20px;
         }
 
-        /* --- 時鐘區 --- */
-        .clock-wrapper {
+        /* --- 巨大的翻頁時鐘 --- */
+        .clock-container {
             display: -webkit-flex;
             display: flex;
-            -webkit-justify-content: center;
-            justify-content: center;
-            margin-bottom: 30px;
+            -webkit-align-items: center;
+            align-items: center;
+            margin-bottom: 40px; /* 與下方卡片的距離 */
+            -webkit-perspective: 1000px; /* 3D 視角 */
+            perspective: 1000px;
         }
 
         .flip-unit {
-            width: 70px;
-            height: 100px;
-            background: #2c2c2e;
-            border-radius: 8px;
-            margin: 0 5px;
             position: relative;
-            font-size: 60px;
-            line-height: 100px;
-            text-align: center;
+            width: 140px;  /* 放大寬度 */
+            height: 220px; /* 放大高度 */
+            background: #202022;
+            border-radius: 12px;
+            margin: 0 6px;
+            font-size: 160px; /* 巨大字體 */
+            line-height: 220px;
             font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-
-        /* 針對 iPad 調整大小 */
-        @media (min-width: 768px) {
-            .flip-unit { width: 100px; height: 140px; font-size: 90px; line-height: 140px; margin: 0 10px; }
-        }
-
-        /* 簡化版翻頁：不使用複雜的 3D 堆疊，改用簡單的變換 */
-        .flip-text {
-            display: block;
-            width: 100%;
-            height: 100%;
+            text-align: center;
             color: #f2f2f7;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            /* 修正 iPad 舊版渲染 */
+            -webkit-transform-style: preserve-3d;
+        }
+
+        /* 上下半部結構 */
+        .upper, .lower {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            background: #2c2c2e;
+            -webkit-backface-visibility: hidden; /* 隱藏背面 */
+            backface-visibility: hidden;
+        }
+
+        .upper {
+            top: 0;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 2px solid rgba(0,0,0,0.3); /* 分隔線 */
+            z-index: 1;
+            -webkit-transform-origin: bottom;
+            transform-origin: bottom;
+        }
+
+        .lower {
+            bottom: 0;
+            border-radius: 0 0 12px 12px;
+            z-index: 0;
+            -webkit-transform-origin: top;
+            transform-origin: top;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: flex-end;
+            align-items: flex-end;
+            -webkit-justify-content: center;
+            justify-content: center;
+        }
+
+        /* 調整數字位置 */
+        .upper span { display: block; -webkit-transform: translateY(0); transform: translateY(0); }
+        .lower span { display: block; -webkit-transform: translateY(-50%); transform: translateY(-50%); height: 200%; }
+
+        /* 動畫層 */
+        .flip-down {
+            z-index: 2;
+            -webkit-animation: turnDown 0.5s ease-in forwards;
+            animation: turnDown 0.5s ease-in forwards;
+        }
+
+        @-webkit-keyframes turnDown {
+            0% { -webkit-transform: rotateX(0deg); }
+            100% { -webkit-transform: rotateX(-90deg); }
         }
 
         .colon {
-            font-size: 50px;
-            line-height: 90px;
-            color: rgba(255,255,255,0.7);
-            margin: 0 5px;
+            font-size: 100px;
+            margin: 0 10px;
+            color: rgba(255,255,255,0.4);
+            margin-top: -20px;
         }
-        @media (min-width: 768px) { .colon { font-size: 80px; line-height: 130px; } }
 
-        /* --- 資訊卡片 (不使用 Grid，改用 Flex) --- */
-        .bento-row {
+        /* --- 資訊卡片區 (放大) --- */
+        .info-row {
             display: -webkit-flex;
             display: flex;
-            width: 100%;
+            width: 95%;
+            max-width: 800px;
             -webkit-justify-content: space-between;
             justify-content: space-between;
-            -webkit-flex-wrap: wrap;
-            flex-wrap: wrap;
         }
 
         .card {
-            background: rgba(30, 30, 32, 0.85); /* 提高不透明度以彌補沒有模糊效果 */
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-            /* 模擬 Grid 佈局 */
-            width: 32%; 
-            height: 110px;
+            background: rgba(40, 40, 42, 0.9);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 20px;
+            width: 32%;
+            height: 140px; /* 卡片加高 */
             display: -webkit-flex;
             display: flex;
             -webkit-flex-direction: column;
@@ -121,45 +160,35 @@
             justify-content: space-between;
         }
 
-        /* 手機版/直向變成兩行 */
-        @media (max-width: 600px) {
-            .card { width: 48%; }
-            .card:last-child { width: 100%; } /* 最後一個佔滿 */
-        }
-
-        .card-label {
-            font-size: 12px;
+        .card-title {
+            font-size: 16px; /* 標題放大 */
             color: #aaa;
             text-transform: uppercase;
             letter-spacing: 1px;
-            display: -webkit-flex;
-            display: flex;
-            -webkit-align-items: center;
-            align-items: center;
-        }
-        
-        .card-value {
-            font-size: 24px;
             font-weight: bold;
-            color: #fff;
-        }
-        
-        .card-sub {
-            font-size: 12px;
-            color: #bbb;
-            margin-top: 2px;
         }
 
-        .progress-bg {
+        .card-main {
+            font-size: 36px; /* 數值放大 */
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .card-sub {
+            font-size: 16px;
+            color: #ccc;
+        }
+
+        /* 進度條 */
+        .bar-bg {
             width: 100%;
-            height: 5px;
+            height: 8px; /* 加粗 */
             background: rgba(255,255,255,0.2);
-            border-radius: 3px;
+            border-radius: 4px;
             margin-top: 10px;
             overflow: hidden;
         }
-        
-        .progress-bar {
+        .bar-fill {
             height: 100%;
             background: #30d158;
             width: 0%;
@@ -167,213 +196,210 @@
             transition: width 0.5s;
         }
 
-        /* 舊版 iOS 隱藏全螢幕按鈕，改用提示文字 */
-        .tips {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 12px;
-            color: rgba(255,255,255,0.4);
+        /* 針對更小的螢幕做微調 */
+        @media (max-width: 700px) {
+            .flip-unit { width: 90px; height: 140px; font-size: 100px; line-height: 140px; }
+            .colon { font-size: 60px; }
+            .card { height: 120px; }
+            .card-main { font-size: 24px; }
         }
 
     </style>
 </head>
 <body>
 
-    <div class="mask"></div>
+    <div class="overlay"></div>
 
     <div class="container">
-        <!-- 時鐘 -->
-        <div class="clock-wrapper">
-            <div class="flip-unit"><span class="flip-text" id="h">00</span></div>
+        <!-- 巨大翻頁時鐘 -->
+        <div class="clock-container">
+            <div class="flip-unit" id="h-ten"></div>
+            <div class="flip-unit" id="h-one"></div>
             <div class="colon">:</div>
-            <div class="flip-unit"><span class="flip-text" id="m">00</span></div>
+            <div class="flip-unit" id="m-ten"></div>
+            <div class="flip-unit" id="m-one"></div>
             <div class="colon">:</div>
-            <div class="flip-unit"><span class="flip-text" id="s">00</span></div>
+            <div class="flip-unit" id="s-ten"></div>
+            <div class="flip-unit" id="s-one"></div>
         </div>
 
-        <!-- 資訊區 -->
-        <div class="bento-row">
+        <!-- 資訊卡片 -->
+        <div class="info-row">
             <!-- 日期 -->
             <div class="card">
-                <div class="card-label">HK Date</div>
+                <div class="card-title">HK Date</div>
                 <div>
-                    <div class="card-value" id="date-d">--</div>
-                    <div class="card-sub" id="date-w">--</div>
+                    <div class="card-main" id="date-main">--</div>
+                    <div class="card-sub" id="date-sub">--</div>
                 </div>
             </div>
 
             <!-- 天氣 -->
             <div class="card">
-                <div class="card-label">Weather</div>
+                <div class="card-title">Weather</div>
                 <div>
-                    <div class="card-value" id="temp">--°</div>
-                    <div class="card-sub" id="weather">Loading</div>
+                    <div class="card-main" id="weather-temp">--°</div>
+                    <div class="card-sub" id="weather-desc">Loading</div>
                 </div>
             </div>
 
             <!-- 下班 -->
             <div class="card">
-                <div class="card-label">Off Work</div>
+                <div class="card-title">Off Work</div>
                 <div style="width:100%">
-                    <div class="card-value" id="countdown">--:--:--</div>
-                    <div class="progress-bg">
-                        <div class="progress-bar" id="bar"></div>
+                    <div class="card-main" id="off-timer" style="font-size:28px">--:--:--</div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" id="off-bar"></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="tips">iPad Mini 1: 請使用「加入主畫面」以全螢幕顯示</div>
     </div>
 
     <script>
-        // --- 設定區 (使用 ES5 變數 var) ---
+        // 設定區
         var CONFIG = {
-            offHour: 17,    // 下班時
-            offMin: 50,     // 下班分
-            workLen: 9      // 工時
+            offHour: 17, // 下班時
+            offMin: 50,  // 下班分
+            workLen: 9
         };
 
-        // --- 核心功能 (ES5) ---
-        
-        function updateClock() {
-            // 處理時區問題 (手動計算 UTC+8)
-            var now = new Date();
-            // 取得 UTC 時間
-            var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-            // 加上 8 小時 (香港)
-            var hkTime = new Date(utc + (3600000 * 8));
-
-            var h = ('0' + hkTime.getHours()).slice(-2);
-            var m = ('0' + hkTime.getMinutes()).slice(-2);
-            var s = ('0' + hkTime.getSeconds()).slice(-2);
-
-            // 更新 DOM (不使用複雜動畫以確保流暢)
-            setText('h', h);
-            setText('m', m);
-            setText('s', s);
-
-            updateDate(hkTime);
-            updateCountdown(hkTime);
-        }
-
-        function setText(id, val) {
+        // 初始化 DOM (靜態結構)
+        function initUnit(id) {
             var el = document.getElementById(id);
-            if(el.innerHTML !== val) {
-                el.innerHTML = val;
-            }
+            el.setAttribute('data-val', '0');
+            el.innerHTML = 
+                '<div class="upper"><span>0</span></div>' + 
+                '<div class="lower"><span>0</span></div>';
         }
 
-        function updateDate(d) {
-            var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            setText('date-d', (d.getMonth() + 1) + '月' + d.getDate() + '日');
-            setText('date-w', days[d.getDay()]);
+        var ids = ['h-ten', 'h-one', 'm-ten', 'm-one', 's-ten', 's-one'];
+        for(var i=0; i<ids.length; i++) initUnit(ids[i]);
+
+        // 翻頁邏輯 (iOS 9 優化版)
+        function updateFlip(id, digit) {
+            var el = document.getElementById(id);
+            var curr = el.getAttribute('data-val');
+
+            // 如果數字沒變，不做任何事 (節省 CPU)
+            if (curr === digit) return;
+
+            // 1. 建立動畫層 (顯示舊數字，準備往下翻)
+            var animUpper = document.createElement('div');
+            animUpper.className = 'upper flip-down';
+            animUpper.innerHTML = '<span>' + curr + '</span>';
+            
+            // 2. 更新底層靜態數字為新數字 (等待動畫層蓋住舊的)
+            // 注意：這裡只更新 upper，因為 lower 本來就被上面的擋住
+            // 實際視覺：舊 Upper 翻下去 -> 露出 新 Upper (靜態)
+            // 簡化動畫以適應 iPad Mini 1：只做上半部翻轉，下半部直接切換
+            
+            el.appendChild(animUpper);
+
+            var staticUpper = el.querySelector('.upper span');
+            var staticLower = el.querySelector('.lower span');
+            
+            staticUpper.innerText = digit;
+            staticLower.innerText = digit;
+
+            // 3. 動畫結束後移除動畫層
+            setTimeout(function() {
+                el.removeChild(animUpper);
+                el.setAttribute('data-val', digit);
+            }, 500); // 對應 CSS 動畫時間
         }
 
-        function updateCountdown(now) {
+        function runClock() {
+            // 香港時間處理
+            var now = new Date();
+            var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            var hk = new Date(utc + (3600000 * 8));
+
+            var h = ('0' + hk.getHours()).slice(-2);
+            var m = ('0' + hk.getMinutes()).slice(-2);
+            var s = ('0' + hk.getSeconds()).slice(-2);
+
+            updateFlip('h-ten', h[0]);
+            updateFlip('h-one', h[1]);
+            updateFlip('m-ten', m[0]);
+            updateFlip('m-one', m[1]);
+            updateFlip('s-ten', s[0]);
+            updateFlip('s-one', s[1]);
+
+            updateInfo(hk);
+        }
+
+        function updateInfo(now) {
+            // 日期
+            var days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            document.getElementById('date-main').innerText = (now.getMonth()+1) + '月' + now.getDate() + '日';
+            document.getElementById('date-sub').innerText = days[now.getDay()];
+
+            // 倒數
             var target = new Date(now.getTime());
             target.setHours(CONFIG.offHour, CONFIG.offMin, 0, 0);
-
-            if (now > target) {
-                target.setDate(target.getDate() + 1);
-            }
+            
+            if (now > target) target.setDate(target.getDate() + 1);
 
             var diff = target - now;
-            
-            // 判斷下班或週末
-            var day = now.getDay();
-            var elCount = document.getElementById('countdown');
-            var elBar = document.getElementById('bar');
-            
-            // 簡單邏輯：如果是今天已經下班(目標是明天)，或者週末
-            var isWeekend = (day === 0 || day === 6);
-            var isAfterWork = (target.getDate() !== now.getDate());
+            var elT = document.getElementById('off-timer');
+            var elB = document.getElementById('off-bar');
 
-            if (isWeekend) {
-                elCount.innerHTML = "Weekend";
-                elCount.style.color = "#30d158";
-                elBar.style.width = "100%";
-            } else if (isAfterWork) {
-                elCount.innerHTML = "Enjoy!";
-                elCount.style.color = "#30d158";
-                elBar.style.width = "100%";
+            var isW = (now.getDay()===0 || now.getDay()===6);
+            
+            if (isW) {
+                elT.innerText = "WEEKEND";
+                elT.style.color = "#30d158";
+                elB.style.width = "100%";
+            } else if (target.getDate() !== now.getDate()) {
+                elT.innerText = "ENJOY";
+                elT.style.color = "#30d158";
+                elB.style.width = "100%";
             } else {
-                var hr = Math.floor(diff / 3600000);
-                var mn = Math.floor((diff % 3600000) / 60000);
-                var sc = Math.floor((diff % 60000) / 1000);
+                var hr = Math.floor(diff/3600000);
+                var mn = Math.floor((diff%3600000)/60000);
+                var sc = Math.floor((diff%60000)/1000);
+                elT.innerText = hr + ':' + ('0'+mn).slice(-2) + ':' + ('0'+sc).slice(-2);
+                elT.style.color = "#fff";
                 
-                elCount.innerHTML = hr + ':' + ('0'+mn).slice(-2) + ':' + ('0'+sc).slice(-2);
-                elCount.style.color = "#fff";
-
-                var total = CONFIG.workLen * 3600000;
-                var pct = 100 - ((diff / total) * 100);
-                if(pct < 0) pct = 0;
-                if(pct > 100) pct = 100;
-                elBar.style.width = pct + '%';
+                var pct = 100 - ((diff / (CONFIG.workLen*3600000)) * 100);
+                elB.style.width = (pct > 100 ? 100 : pct) + '%';
             }
         }
 
-        // --- 舊版 Ajax 請求 (XMLHttpRequest) ---
-        function fetchWeather() {
+        // 天氣 (舊版 Ajax)
+        function fetchW() {
             var xhr = new XMLHttpRequest();
-            // 香港天文台 API
             xhr.open('GET', 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc', true);
-            
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            var tempVal = data.temperature.data[0].value;
-                            
-                            // 嘗試找天文台的溫度
-                            for(var i=0; i<data.temperature.data.length; i++) {
-                                if(data.temperature.data[i].place === "香港天文台") {
-                                    tempVal = data.temperature.data[i].value;
-                                    break;
-                                }
-                            }
-
-                            setText('temp', tempVal + '°c');
-                            
-                            var desc = "濕度 " + data.humidity.data[0].value + "%";
-                            if(data.warningMessage && data.warningMessage.length > 0) {
-                                desc = "有警告";
-                            } else if (data.rainfall && data.rainfall.data.length > 0) {
-                                // 簡單檢查有沒有雨
-                                var rain = false;
-                                for(var j=0; j<data.rainfall.data.length; j++) {
-                                    if(data.rainfall.data[j].max > 0) rain = true;
-                                }
-                                if(rain) desc = "有雨";
-                            }
-
-                            setText('weather', desc);
-
-                        } catch(e) {
-                            setText('weather', 'Error');
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    try {
+                        var d = JSON.parse(xhr.responseText);
+                        var val = d.temperature.data[0].value;
+                        // 嘗試找天文台
+                        for(var i=0; i<d.temperature.data.length; i++) {
+                            if(d.temperature.data[i].place === "香港天文台") val = d.temperature.data[i].value;
                         }
-                    }
+                        document.getElementById('weather-temp').innerText = val + '°';
+                        
+                        var desc = "濕度" + d.humidity.data[0].value + "%";
+                        if(d.rainfall && d.rainfall.data.length > 0) {
+                             // 簡化檢查
+                             for(var j=0; j<d.rainfall.data.length; j++) {
+                                 if(d.rainfall.data[j].max > 0) { desc = "有雨"; break; }
+                             }
+                        }
+                        document.getElementById('weather-desc').innerText = desc;
+                    } catch(e) {}
                 }
             };
-            
-            // 舊設備容錯處理
-            xhr.onerror = function() {
-                setText('weather', 'Offline');
-            };
-
             xhr.send();
         }
 
-        // --- 啟動 ---
-        setInterval(updateClock, 1000);
-        updateClock();
-        
-        // 天氣每 15 分鐘更新一次
-        fetchWeather();
-        setInterval(fetchWeather, 900000); 
+        setInterval(runClock, 1000);
+        runClock();
+        fetchW();
+        setInterval(fetchW, 600000);
 
     </script>
 </body>
