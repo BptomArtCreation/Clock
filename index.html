@@ -6,7 +6,7 @@
     <!-- iOS 舊版全螢幕設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Big Flip Clock Fixed</title>
+    <title>Fixed Jitter Clock</title>
     <style>
         /* --- 基礎設定 --- */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-box-sizing: border-box; }
@@ -14,7 +14,6 @@
         body {
             font-family: Helvetica, Arial, sans-serif;
             background: #000;
-            /* 背景圖：深色城市夜景 */
             background-image: url('https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1024&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
@@ -23,9 +22,10 @@
             overflow: hidden;
             color: #fff;
             -webkit-user-select: none;
+            /* 禁止字體縮放導致的位移 */
+            -webkit-text-size-adjust: 100%;
         }
 
-        /* 遮罩：讓文字更清楚 */
         .overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -49,7 +49,7 @@
             padding: 20px;
         }
 
-        /* --- 巨大的翻頁時鐘 --- */
+        /* --- 翻頁時鐘結構 --- */
         .clock-container {
             display: -webkit-flex;
             display: flex;
@@ -63,17 +63,19 @@
         .flip-unit {
             position: relative;
             width: 140px;
-            height: 220px; /* 總高度 */
+            height: 220px;
             background: #202022;
             border-radius: 12px;
             margin: 0 6px;
             font-size: 160px;
-            line-height: 220px; /* 確保行高與高度一致 */
+            line-height: 220px;
             font-weight: bold;
             text-align: center;
             color: #f2f2f7;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            /* 關鍵：強制 3D 上下文，避免切換時抖動 */
             -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
         }
 
         /* 上下半部結構 */
@@ -81,11 +83,15 @@
             position: absolute;
             left: 0;
             width: 100%;
-            height: 50%; /* 各佔一半高度 (110px) */
+            height: 50%;
             overflow: hidden;
             background: #2c2c2e;
+            /* 隱藏背面 */
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
+            /* 關鍵修復：強制所有圖層啟用 GPU 加速 (translate3d)，防止翻頁時從 2D 跳轉到 3D 造成的位移 */
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
         }
 
         .upper {
@@ -97,33 +103,31 @@
             transform-origin: bottom;
         }
 
-        /* --- 重要修正：Lower 樣式 --- */
         .lower {
             bottom: 0;
             border-radius: 0 0 12px 12px;
             z-index: 0;
             -webkit-transform-origin: top;
             transform-origin: top;
-            /* 移除 Flexbox，避免舊版 iOS 對齊錯誤 */
         }
 
-        /* --- 重要修正：數字定位 --- */
+        /* 數字內容定位 */
         .upper span, .lower span {
             display: block;
             width: 100%;
-            height: 200%; /* span 高度為容器的兩倍 (即 220px) */
+            height: 200%;
             line-height: 220px;
             text-align: center;
+            /* 確保字體渲染一致性 */
+            -webkit-font-smoothing: antialiased; 
         }
 
         .upper span {
-            /* 上半部不需要位移 */
             -webkit-transform: translateY(0);
             transform: translateY(0);
         }
 
         .lower span {
-            /* 下半部往上移 50%，剛好顯示後半段 */
             -webkit-transform: translateY(-50%);
             transform: translateY(-50%);
         }
@@ -133,6 +137,9 @@
             z-index: 2;
             -webkit-animation: turnDown 0.5s ease-in forwards;
             animation: turnDown 0.5s ease-in forwards;
+            /* 確保動畫層也鎖定渲染模式 */
+            -webkit-transform-style: preserve-3d;
+            -webkit-backface-visibility: hidden;
         }
 
         @-webkit-keyframes turnDown {
@@ -191,7 +198,6 @@
             color: #ccc;
         }
 
-        /* 進度條 */
         .bar-bg {
             width: 100%;
             height: 8px;
@@ -210,7 +216,6 @@
 
         @media (max-width: 700px) {
             .flip-unit { width: 90px; height: 140px; font-size: 100px; line-height: 140px; }
-            /* RWD 時同樣調整行高 */
             .upper span, .lower span { height: 200%; line-height: 140px; }
             .colon { font-size: 60px; }
             .card { height: 120px; }
@@ -224,7 +229,6 @@
     <div class="overlay"></div>
 
     <div class="container">
-        <!-- 巨大翻頁時鐘 -->
         <div class="clock-container">
             <div class="flip-unit" id="h-ten"></div>
             <div class="flip-unit" id="h-one"></div>
@@ -236,9 +240,7 @@
             <div class="flip-unit" id="s-one"></div>
         </div>
 
-        <!-- 資訊卡片 -->
         <div class="info-row">
-            <!-- 日期 -->
             <div class="card">
                 <div class="card-title">HK Date</div>
                 <div>
@@ -247,7 +249,6 @@
                 </div>
             </div>
 
-            <!-- 天氣 -->
             <div class="card">
                 <div class="card-title">Weather</div>
                 <div>
@@ -256,7 +257,6 @@
                 </div>
             </div>
 
-            <!-- 下班 -->
             <div class="card">
                 <div class="card-title">Off Work</div>
                 <div style="width:100%">
@@ -270,14 +270,12 @@
     </div>
 
     <script>
-        // 設定區
         var CONFIG = {
-            offHour: 17, // 下班時
-            offMin: 50,  // 下班分
+            offHour: 17,
+            offMin: 50,
             workLen: 9
         };
 
-        // 初始化 DOM
         function initUnit(id) {
             var el = document.getElementById(id);
             el.setAttribute('data-val', '0');
@@ -289,15 +287,15 @@
         var ids = ['h-ten', 'h-one', 'm-ten', 'm-one', 's-ten', 's-one'];
         for(var i=0; i<ids.length; i++) initUnit(ids[i]);
 
-        // 翻頁邏輯
         function updateFlip(id, digit) {
             var el = document.getElementById(id);
             var curr = el.getAttribute('data-val');
 
             if (curr === digit) return;
 
-            // 建立動畫層
             var animUpper = document.createElement('div');
+            // 注意：這裡加入 flip-down 時，因為 CSS 已經強制 .upper 預設使用 translate3d，
+            // 所以不會發生渲染模式切換的位移
             animUpper.className = 'upper flip-down';
             animUpper.innerHTML = '<span>' + curr + '</span>';
             
@@ -370,7 +368,6 @@
             }
         }
 
-        // 天氣 API
         function fetchW() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc', true);
