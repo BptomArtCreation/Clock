@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Style Flip Clock</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: rgba(28, 28, 30, 0.65);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #86868b;
+            --accent-color: #0a84ff; /* Apple Blue */
+            --danger-color: #ff453a; /* Apple Red */
+            --success-color: #30d158; /* Apple Green */
+            --flip-card-bg: #2c2c2e;
+            --radius: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: url('https://images.unsplash.com/photo-1621360841013-c768371e93cf?q=80&w=2560&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        /* 背景遮罩，讓文字更清晰 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: -1;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        /* --- 翻頁時鐘樣式 --- */
+        .clock-container {
+            display: flex;
+            gap: 15px;
+            perspective: 1000px;
+        }
+
+        .flip-unit {
+            position: relative;
+            width: 100px;
+            height: 140px;
+            background: var(--flip-card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            font-size: 80px;
+            font-weight: 700;
+            line-height: 140px;
+            text-align: center;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* 翻頁結構 */
+        .top, .bottom, .top-flip, .bottom-flip {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            background: var(--flip-card-bg);
+        }
+
+        .top, .top-flip {
+            top: 0;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid rgba(0,0,0,0.3);
+            transform-origin: bottom;
+        }
+
+        .bottom, .bottom-flip {
+            bottom: 0;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            transform-origin: top;
+        }
+
+        /* 調整數字位置以適應半張卡片 */
+        .top-content, .bottom-content {
+            display: block;
+            width: 100%;
+            height: 200%; /* 雙倍高度 */
+            text-align: center;
+        }
+        
+        .top-content {
+            margin-top: 0; /* 顯示上半部 */
+        }
+        
+        .bottom-content {
+            margin-top: -100%; /* 顯示下半部 */
+        }
+
+        /* 動畫 Class */
+        .top-flip {
+            z-index: 2;
+            transform: rotateX(0deg);
+            animation: flip-top 0.6s ease-in forwards;
+        }
+
+        .bottom-flip {
+            z-index: 1;
+            transform: rotateX(90deg);
+            animation: flip-bottom 0.6s ease-out 0.3s forwards; /* 延遲一半時間 */
+        }
+
+        @keyframes flip-top {
+            to { transform: rotateX(-90deg); }
+        }
+
+        @keyframes flip-bottom {
+            to { transform: rotateX(0deg); }
+        }
+
+        .colon {
+            font-size: 60px;
+            font-weight: 700;
+            line-height: 130px;
+            color: rgba(255,255,255,0.8);
+            margin: 0 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
+
+        /* --- 下方資訊區塊 (Bento Grid) --- */
+        .widgets-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 140px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+            background: rgba(44, 44, 46, 0.75);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            gap: 8px;
+        }
+
+        .card-header svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 100%;
+        }
+
+        /* 日期樣式 */
+        .date-big {
+            font-size: 32px;
+            font-weight: 600;
+        }
+        .date-small {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* 天氣樣式 */
+        .weather-temp {
+            font-size: 36px;
+            font-weight: 600;
+            background: linear-gradient(180deg, #fff, #a1a1a6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .weather-desc {
+            font-size: 16px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 倒數樣式 */
+        .countdown-time {
+            font-size: 28px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums; /* 等寬數字，避免跳動 */
+            color: var(--success-color);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--success-color);
+            width: 0%;
+            transition: width 1s linear;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .flip-unit { width: 60px; height: 90px; font-size: 48px; line-height: 90px; border-radius: 8px;}
+            .colon { font-size: 40px; line-height: 80px; }
+            .widgets-grid { grid-template-columns: 1fr; }
+            .card { flex-direction: row; align-items: center; height: 80px; padding: 0 20px;}
+            .card-body { align-items: flex-end; justify-content: center; text-align: right; }
+            .progress-bar { display: none; }
+            .date-big { font-size: 24px; }
+            .weather-temp { font-size: 28px; }
+            .countdown-time { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 翻頁時鐘區 -->
+        <div class="clock-container">
+            <div class="flip-unit" id="hour-ten"></div>
+            <div class="flip-unit" id="hour-one"></div>
+            <div class="colon">:</div>
+            <div class="flip-unit" id="min-ten"></div>
+            <div class="flip-unit" id="min-one"></div>
+            <div class="colon">:</div>
+            <div class="flip-unit" id="sec-ten"></div>
+            <div class="flip-unit" id="sec-one"></div>
+        </div>
+
+        <!-- 資訊卡片區 -->
+        <div class="widgets-grid">
+            
+            <!-- 日期卡片 -->
+            <div class="card date-card">
+                <div class="card-header">
+                    <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5v-5z"/></svg>
+                    <span>Today</span>
+                </div>
+                <div class="card-body">
+                    <div class="date-big" id="date-day">Loading...</div>
+                    <div class="date-small" id="date-full">...</div>
+                </div>
+            </div>
+
+            <!-- 天氣卡片 -->
+            <div class="card weather-card">
+                <div class="card-header">
+                    <svg viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                    <span>Weather</span>
+                </div>
+                <div class="card-body">
+                    <div class="weather-temp" id="weather-temp">24°C</div>
+                    <div class="weather-desc" id="weather-desc">晴朗多雲</div>
+                </div>
+            </div>
+
+            <!-- 下班倒數卡片 -->
+            <div class="card countdown-card">
+                <div class="card-header">
+                    <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                    <span>Off Work</span>
+                </div>
+                <div class="card-body">
+                    <div class="countdown-time" id="countdown-timer">--:--:--</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 設定 ---
+        const CONFIG = {
+            offWorkHour: 18, // 下班時間 (24小時制)
+            offWorkMinute: 0,
+            weatherLocation: "Taipei", // 這裡只用於顯示，實際天氣需要 API
+        };
+
+        // --- 翻頁時鐘邏輯 ---
+        function updateFlipUnit(id, value) {
+            const element = document.getElementById(id);
+            const currentValue = element.getAttribute('data-value');
+            
+            // 如果數字沒變，不做任何事
+            if (currentValue === value) return;
+
+            // 移除舊的動畫 HTML
+            element.innerHTML = ''; 
+            
+            // 建立新的翻頁結構
+            // top: 顯示當前數字
+            // bottom: 顯示當前數字
+            // top-flip: 舊數字翻下去 (背面是新數字)
+            // bottom-flip: 新數字翻上來
+            
+            const prevValue = currentValue === null ? value : currentValue;
+            
+            // 設定 DOM
+            element.setAttribute('data-value', value);
+            
+            const html = `
+                <div class="top"><span class="top-content">${value}</span></div>
+                <div class="bottom"><span class="bottom-content">${value}</span></div>
+                <div class="top-flip"><span class="top-content">${prevValue}</span></div>
+                <div class="bottom-flip"><span class="bottom-content">${value}</span></div>
+            `;
+            
+            element.innerHTML = html;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+
+            updateFlipUnit('hour-ten', h[0]);
+            updateFlipUnit('hour-one', h[1]);
+            updateFlipUnit('min-ten', m[0]);
+            updateFlipUnit('min-one', m[1]);
+            updateFlipUnit('sec-ten', s[0]);
+            updateFlipUnit('sec-one', s[1]);
+
+            updateDate(now);
+            updateCountdown(now);
+        }
+
+        // --- 日期功能 ---
+        function updateDate(now) {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const dateNum = now.getDate();
+            
+            document.getElementById('date-day').innerText = dayName;
+            document.getElementById('date-full').innerText = `${monthName} ${dateNum}, ${now.getFullYear()}`;
+        }
+
+        // --- 下班倒數功能 ---
+        function updateCountdown(now) {
+            const target = new Date(now);
+            target.setHours(CONFIG.offWorkHour, CONFIG.offWorkMinute, 0, 0);
+
+            // 如果現在已經超過下班時間，目標設為明天的下班時間 (或顯示已下班)
+            if (now > target) {
+                // 如果想要顯示 "Enjoy!", 解開下面註解
+                // document.getElementById('countdown-timer').innerText = "Enjoy!";
+                // document.getElementById('progress-fill').style.width = '100%';
+                // return;
+                
+                // 這裡示範設定為明天的目標
+                target.setDate(target.getDate() + 1);
+            }
+
+            const diff = target - now;
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const timerStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            const timerEl = document.getElementById('countdown-timer');
+            timerEl.innerText = timerStr;
+
+            // 計算進度條 (假設工作時間是 9小時 9:00 - 18:00)
+            // 這裡簡化：距離下班越近，條越滿
+            const totalWorkMilliseconds = 9 * 60 * 60 * 1000; 
+            let progress = 100 - ((diff / totalWorkMilliseconds) * 100);
+            if(progress < 0) progress = 0;
+            if(progress > 100) progress = 100;
+            
+            // 週末處理
+            const day = now.getDay();
+            if (day === 0 || day === 6) {
+                 timerEl.innerText = "Weekend!";
+                 timerEl.style.color = "var(--accent-color)";
+                 progress = 100;
+            }
+
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+        }
+
+        // --- 模擬天氣功能 (因為真實 API 需要 Key) ---
+        function initWeather() {
+            // 實際專案中，這裡可以使用 fetch() 呼叫 OpenWeatherMap API
+            // 這裡使用隨機模擬數據展示 UI 效果
+            const weathers = [
+                { temp: "24°C", desc: "Sunny" },
+                { temp: "22°C", desc: "Cloudy" },
+                { temp: "19°C", desc: "Rainy" }
+            ];
+            
+            // 隨機選一個 (僅供展示)
+            const w = weathers[0]; 
+            
+            document.getElementById('weather-temp').innerText = w.temp;
+            document.getElementById('weather-desc').innerText = w.desc;
+        }
+
+        // --- 啟動 ---
+        setInterval(updateClock, 1000);
+        updateClock(); // 立即執行一次
+        initWeather();
+
+    </script>
+</body>
+</html>
