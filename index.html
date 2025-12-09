@@ -6,7 +6,7 @@
     <!-- iOS 舊版全螢幕設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Big Flip Clock</title>
+    <title>Big Flip Clock Fixed</title>
     <style>
         /* --- 基礎設定 --- */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-box-sizing: border-box; }
@@ -29,7 +29,7 @@
         .overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); /* 加深遮罩 */
+            background: rgba(0, 0, 0, 0.6);
             z-index: 0;
         }
 
@@ -55,25 +55,24 @@
             display: flex;
             -webkit-align-items: center;
             align-items: center;
-            margin-bottom: 40px; /* 與下方卡片的距離 */
-            -webkit-perspective: 1000px; /* 3D 視角 */
+            margin-bottom: 40px;
+            -webkit-perspective: 1000px;
             perspective: 1000px;
         }
 
         .flip-unit {
             position: relative;
-            width: 140px;  /* 放大寬度 */
-            height: 220px; /* 放大高度 */
+            width: 140px;
+            height: 220px; /* 總高度 */
             background: #202022;
             border-radius: 12px;
             margin: 0 6px;
-            font-size: 160px; /* 巨大字體 */
-            line-height: 220px;
+            font-size: 160px;
+            line-height: 220px; /* 確保行高與高度一致 */
             font-weight: bold;
             text-align: center;
             color: #f2f2f7;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            /* 修正 iPad 舊版渲染 */
             -webkit-transform-style: preserve-3d;
         }
 
@@ -82,39 +81,52 @@
             position: absolute;
             left: 0;
             width: 100%;
-            height: 50%;
+            height: 50%; /* 各佔一半高度 (110px) */
             overflow: hidden;
             background: #2c2c2e;
-            -webkit-backface-visibility: hidden; /* 隱藏背面 */
+            -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
         }
 
         .upper {
             top: 0;
             border-radius: 12px 12px 0 0;
-            border-bottom: 2px solid rgba(0,0,0,0.3); /* 分隔線 */
+            border-bottom: 2px solid rgba(0,0,0,0.3);
             z-index: 1;
             -webkit-transform-origin: bottom;
             transform-origin: bottom;
         }
 
+        /* --- 重要修正：Lower 樣式 --- */
         .lower {
             bottom: 0;
             border-radius: 0 0 12px 12px;
             z-index: 0;
             -webkit-transform-origin: top;
             transform-origin: top;
-            display: -webkit-flex;
-            display: flex;
-            -webkit-align-items: flex-end;
-            align-items: flex-end;
-            -webkit-justify-content: center;
-            justify-content: center;
+            /* 移除 Flexbox，避免舊版 iOS 對齊錯誤 */
         }
 
-        /* 調整數字位置 */
-        .upper span { display: block; -webkit-transform: translateY(0); transform: translateY(0); }
-        .lower span { display: block; -webkit-transform: translateY(-50%); transform: translateY(-50%); height: 200%; }
+        /* --- 重要修正：數字定位 --- */
+        .upper span, .lower span {
+            display: block;
+            width: 100%;
+            height: 200%; /* span 高度為容器的兩倍 (即 220px) */
+            line-height: 220px;
+            text-align: center;
+        }
+
+        .upper span {
+            /* 上半部不需要位移 */
+            -webkit-transform: translateY(0);
+            transform: translateY(0);
+        }
+
+        .lower span {
+            /* 下半部往上移 50%，剛好顯示後半段 */
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+        }
 
         /* 動畫層 */
         .flip-down {
@@ -135,7 +147,7 @@
             margin-top: -20px;
         }
 
-        /* --- 資訊卡片區 (放大) --- */
+        /* --- 資訊卡片區 --- */
         .info-row {
             display: -webkit-flex;
             display: flex;
@@ -151,7 +163,7 @@
             border-radius: 16px;
             padding: 20px;
             width: 32%;
-            height: 140px; /* 卡片加高 */
+            height: 140px;
             display: -webkit-flex;
             display: flex;
             -webkit-flex-direction: column;
@@ -161,7 +173,7 @@
         }
 
         .card-title {
-            font-size: 16px; /* 標題放大 */
+            font-size: 16px;
             color: #aaa;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -169,7 +181,7 @@
         }
 
         .card-main {
-            font-size: 36px; /* 數值放大 */
+            font-size: 36px;
             font-weight: bold;
             white-space: nowrap;
         }
@@ -182,7 +194,7 @@
         /* 進度條 */
         .bar-bg {
             width: 100%;
-            height: 8px; /* 加粗 */
+            height: 8px;
             background: rgba(255,255,255,0.2);
             border-radius: 4px;
             margin-top: 10px;
@@ -196,9 +208,10 @@
             transition: width 0.5s;
         }
 
-        /* 針對更小的螢幕做微調 */
         @media (max-width: 700px) {
             .flip-unit { width: 90px; height: 140px; font-size: 100px; line-height: 140px; }
+            /* RWD 時同樣調整行高 */
+            .upper span, .lower span { height: 200%; line-height: 140px; }
             .colon { font-size: 60px; }
             .card { height: 120px; }
             .card-main { font-size: 24px; }
@@ -264,7 +277,7 @@
             workLen: 9
         };
 
-        // 初始化 DOM (靜態結構)
+        // 初始化 DOM
         function initUnit(id) {
             var el = document.getElementById(id);
             el.setAttribute('data-val', '0');
@@ -276,23 +289,17 @@
         var ids = ['h-ten', 'h-one', 'm-ten', 'm-one', 's-ten', 's-one'];
         for(var i=0; i<ids.length; i++) initUnit(ids[i]);
 
-        // 翻頁邏輯 (iOS 9 優化版)
+        // 翻頁邏輯
         function updateFlip(id, digit) {
             var el = document.getElementById(id);
             var curr = el.getAttribute('data-val');
 
-            // 如果數字沒變，不做任何事 (節省 CPU)
             if (curr === digit) return;
 
-            // 1. 建立動畫層 (顯示舊數字，準備往下翻)
+            // 建立動畫層
             var animUpper = document.createElement('div');
             animUpper.className = 'upper flip-down';
             animUpper.innerHTML = '<span>' + curr + '</span>';
-            
-            // 2. 更新底層靜態數字為新數字 (等待動畫層蓋住舊的)
-            // 注意：這裡只更新 upper，因為 lower 本來就被上面的擋住
-            // 實際視覺：舊 Upper 翻下去 -> 露出 新 Upper (靜態)
-            // 簡化動畫以適應 iPad Mini 1：只做上半部翻轉，下半部直接切換
             
             el.appendChild(animUpper);
 
@@ -302,15 +309,13 @@
             staticUpper.innerText = digit;
             staticLower.innerText = digit;
 
-            // 3. 動畫結束後移除動畫層
             setTimeout(function() {
                 el.removeChild(animUpper);
                 el.setAttribute('data-val', digit);
-            }, 500); // 對應 CSS 動畫時間
+            }, 500);
         }
 
         function runClock() {
-            // 香港時間處理
             var now = new Date();
             var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
             var hk = new Date(utc + (3600000 * 8));
@@ -330,12 +335,10 @@
         }
 
         function updateInfo(now) {
-            // 日期
             var days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
             document.getElementById('date-main').innerText = (now.getMonth()+1) + '月' + now.getDate() + '日';
             document.getElementById('date-sub').innerText = days[now.getDay()];
 
-            // 倒數
             var target = new Date(now.getTime());
             target.setHours(CONFIG.offHour, CONFIG.offMin, 0, 0);
             
@@ -367,7 +370,7 @@
             }
         }
 
-        // 天氣 (舊版 Ajax)
+        // 天氣 API
         function fetchW() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc', true);
@@ -376,7 +379,6 @@
                     try {
                         var d = JSON.parse(xhr.responseText);
                         var val = d.temperature.data[0].value;
-                        // 嘗試找天文台
                         for(var i=0; i<d.temperature.data.length; i++) {
                             if(d.temperature.data[i].place === "香港天文台") val = d.temperature.data[i].value;
                         }
@@ -384,7 +386,6 @@
                         
                         var desc = "濕度" + d.humidity.data[0].value + "%";
                         if(d.rainfall && d.rainfall.data.length > 0) {
-                             // 簡化檢查
                              for(var j=0; j<d.rainfall.data.length; j++) {
                                  if(d.rainfall.data[j].max > 0) { desc = "有雨"; break; }
                              }
